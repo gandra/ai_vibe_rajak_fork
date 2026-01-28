@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /workspace log --oneline)",
+      "Bash(xargs ls:*)",
+      "Bash(git -C /workspace show --stat)"
+    ]
+  }
+}
