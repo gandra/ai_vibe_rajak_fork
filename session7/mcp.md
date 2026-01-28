@@ -160,11 +160,28 @@ ollama pull gemma3:4b
 # ollama pull qwen2.5:7b       # Dobar balans
 ```
 
+Napomena (macOS: address already in use):
+
+Ako pri `ollama serve` dobiješ:
+
+```
+Error: listen tcp 127.0.0.1:11434: bind: address already in use
+```
+
+to znači da je Ollama već pokrenut. U tom slučaju:
+
+- Ne pokreći ponovo server — samo koristi postojeći (podrazumevano je na `http://127.0.0.1:11434`).
+- Proveri stanje: `ollama ps` ili `curl http://127.0.0.1:11434/api/tags`.
+- Ako želiš paralelni server na drugom portu: `OLLAMA_HOST=127.0.0.1:11435 ollama serve` i u klijentu postavi `export OLLAMA_HOST="http://127.0.0.1:11435"`.
+- Ako treba da zaustaviš servisni proces: `brew services stop ollama` (ako je pokrenut kao Homebrew servis) ili proveri port `lsof -nP -i :11434`.
+
 ---
 
 ## 4. Pokretanje MCP Sistema
 
 ### 4.1 Brzi Start (Preporučeno)
+
+Napomena: Ako je Ollama već pokrenuta (vidi 3.3), preskoči `ollama serve` i pređi direktno na CLI korak.
 
 ```bash
 # Terminal 1: Pokreni Ollama

@@ -198,6 +198,56 @@ uv sync
 ```bash
 # Obriši lock i ponovo reši
 rm uv.lock
+
+---
+
+## 8. Session 7: MCP + LangChain + Ollama
+
+Session7 sadrži dva Python fajla koja zahtevaju dodatne biblioteke:
+
+- `session7/weather-and-air-quality.py`: koristi `mcp` (server) i `httpx` (async HTTP klijent)
+- `session7/mcp_cli.py`: koristi `mcp` (klijent), `pydantic`, `langchain-core`, `langchain-ollama`
+
+### 8.1 Instalacija zavisnosti (uv)
+
+Ukorenu projekta:
+
+```bash
+uv add mcp httpx langchain-ollama langchain-core pydantic
+```
+
+Ako radiš izolovano samo u `session7/`, komande su iste (ali i dalje je preporuka da držiš sve u jednom env-u na nivou repoa).
+
+### 8.2 Ollama (neophodno za LLM)
+
+```bash
+# Pokreni Ollama server
+ollama serve
+
+# Preuzmi model (primer)
+ollama pull gemma3:4b
+
+# Po želji izmeni model/host
+export OLLAMA_MODEL="gemma3:4b"     # ili npr. llama3.2:3b
+export OLLAMA_HOST="http://127.0.0.1:11434"
+```
+
+### 8.3 Pokretanje session7 CLI-ja
+
+```bash
+# Aktiviraj env (opciono) i idi u folder
+cd session7
+
+# Pokreni CLI (on sam startuje MCP server preko stdio)
+uv run python mcp_cli.py
+
+# Primeri upita u promptu:
+#   weather in Belgrade
+#   air quality in Delhi
+#   both in Tokyo
+```
+
+Napomena: `mcp_cli.py` pokreće `weather-and-air-quality.py` preko stdio, pa je važno da radiš iz foldera `session7/` (tako da je fajl vidljiv).
 uv sync
 ```
 
