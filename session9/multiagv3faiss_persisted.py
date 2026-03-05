@@ -4,8 +4,8 @@ import os
 # ── Langfuse local tracing ─────────────────────────────────────────
 # Langfuse Cloud: sign up free at https://cloud.langfuse.com
 # Copy your project's Public Key and Secret Key from Settings → API Keys.
-os.environ["LANGFUSE_PUBLIC_KEY"]  = "pk-lf-b07170bb-a9f7-4604-8676-6cdfb232cfae"   # ← paste public key
-os.environ["LANGFUSE_SECRET_KEY"]  = "sk-lf-ac0bc6d9-64cb-4dc6-ba42-ceee2e4d6608"   # ← paste secret key
+os.environ["LANGFUSE_PUBLIC_KEY"]  = ""   # ← paste public key
+os.environ["LANGFUSE_SECRET_KEY"]  = ""   # ← paste secret key
 os.environ["LANGFUSE_HOST"]        = "https://cloud.langfuse.com"  # or http://localhost:3000 for self-hosted
 
 # Disable LangSmith to avoid conflicts
