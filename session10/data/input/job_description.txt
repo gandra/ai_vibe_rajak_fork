@@ -1,0 +1,47 @@
+Senior Backend Engineer — FinTech Startup (Series B)
+=====================================================
+
+About Us:
+We're a fast-growing FinTech company building next-generation payment 
+infrastructure. Our platform processes millions of transactions daily
+for enterprise clients across Europe and North America.
+
+Role Overview:
+We're looking for a Senior Backend Engineer to lead the design and 
+development of our core payment processing services. You'll work closely 
+with cross-functional teams (product, data, DevOps) to ship reliable, 
+high-performance systems at scale.
+
+Must-Have Requirements:
+- 5+ years of backend engineering experience
+- Strong proficiency in Python
+- Experience with relational databases (PostgreSQL preferred)
+- Experience designing and building RESTful APIs
+- Familiarity with microservices architecture
+- Experience with AWS cloud services
+- Experience with CI/CD pipelines (GitHub Actions, Jenkins, or similar)
+- Strong understanding of software testing practices (unit, integration, e2e)
+- Comfortable working in Agile/Scrum teams
+
+Nice-to-Have:
+- Experience with Kubernetes or container orchestration
+- Familiarity with event-driven architectures (Kafka, RabbitMQ)
+- Experience with Terraform or infrastructure-as-code tools
+- Exposure to GraphQL
+- Experience in the payments/FinTech domain
+- Track record of mentoring junior engineers
+
+Responsibilities:
+- Lead the design and implementation of backend services for payment processing
+- Collaborate with product and data teams to define technical requirements
+- Optimize system performance and ensure 99.9% uptime SLAs
+- Implement and maintain CI/CD pipelines for automated deployment
+- Conduct code reviews and contribute to engineering best practices
+- Mentor junior team members and support their growth
+- Participate in on-call rotation for critical production systems
+
+What We Offer:
+- Competitive salary (€80k–€110k) + equity
+- Remote-first culture with quarterly offsites
+- Learning budget (€2,000/year)
+- Modern tech stack with autonomy to choose the right tools

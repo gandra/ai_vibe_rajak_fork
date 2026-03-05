@@ -1,0 +1,25 @@
+# ── Core LangGraph & LangChain ──────────────────────────────────────
+# langgraph: the graph execution framework (StateGraph, edges, etc.)
+# langchain-core: base abstractions (prompts, output parsers, etc.)
+langgraph>=0.2
+langchain-core>=0.3
+
+# ── LLM Provider ────────────────────────────────────────────────────
+# Choose ONE of the following (uncomment the one you want to use):
+#
+# Option A: OpenAI (cloud, fast, best results with gpt-4o)
+langchain-openai>=0.2
+#
+# Option B: Ollama (local, free, works offline)
+# langchain-ollama>=0.2
+#
+# Option C: Anthropic (cloud, strong at structured output)
+# langchain-anthropic>=0.2
+
+# ── HTML Parsing ────────────────────────────────────────────────────
+# BeautifulSoup for parsing cv_original.html into sections
+# and reconstructing cv_tailored.html with the same layout.
+beautifulsoup4>=4.12
+
+# ── Typing ──────────────────────────────────────────────────────────
+typing-extensions>=4.0
