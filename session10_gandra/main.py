@@ -81,12 +81,12 @@ from state import CVTailoringState
 # Svaki se aktivira nezavisno na osnovu env varijabli.
 
 # — LangSmith: automatski za LangChain/LangGraph (zero-code)
-# Potrebno: LANGCHAIN_TRACING_V2=true + LANGCHAIN_API_KEY
+# Podržava oba prefiksa: LANGCHAIN_* (stariji) i LANGSMITH_* (noviji)
 _langsmith_enabled = (
-    os.environ.get("LANGCHAIN_TRACING_V2", "").lower() == "true"
-    and os.environ.get("LANGCHAIN_API_KEY")
+    os.environ.get("LANGCHAIN_TRACING_V2", os.environ.get("LANGSMITH_TRACING", "")).lower() == "true"
+    and (os.environ.get("LANGCHAIN_API_KEY") or os.environ.get("LANGSMITH_API_KEY"))
 )
-_langsmith_project = os.environ.get("LANGCHAIN_PROJECT", "default")
+_langsmith_project = os.environ.get("LANGCHAIN_PROJECT", os.environ.get("LANGSMITH_PROJECT", "default"))
 if _langsmith_enabled:
     print(f"🔍 LangSmith tracing: AKTIVIRAN (projekat: {_langsmith_project})")
 else:
