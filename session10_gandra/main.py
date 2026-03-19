@@ -72,8 +72,26 @@ HOW TO RUN:
 """
 
 # ── Imports ─────────────────────────────────────────────────────────
+import os
 from langgraph.graph import StateGraph, START, END
 from state import CVTailoringState
+
+# ── Langfuse Tracing (opciono) ────────────────────────────────────
+# Aktivira se automatski ako su LANGFUSE_SECRET_KEY i LANGFUSE_PUBLIC_KEY
+# postavljeni u env (ili .env fajlu). Bez tih varijabli — radi normalno.
+_langfuse_handler = None
+if os.environ.get("LANGFUSE_SECRET_KEY") and os.environ.get("LANGFUSE_PUBLIC_KEY"):
+    try:
+        from langfuse.callback import CallbackHandler
+        _langfuse_handler = CallbackHandler(
+            session_id="cv-tailoring",
+            trace_name="cv-tailoring-pipeline",
+        )
+        print("🔍 Langfuse tracing: AKTIVIRAN")
+    except ImportError:
+        print("🔍 Langfuse tracing: LANGFUSE_* keys postavljeni ali 'langfuse' paket nije instaliran (uv add langfuse)")
+else:
+    print("🔍 Langfuse tracing: nije konfigurisan (opciono — vidi HOWTO.md)")
 
 # Node functions (Steps 1-2 implemented, rest coming later)
 from nodes.ingest import ingest_files
@@ -169,7 +187,8 @@ if __name__ == "__main__":
     print("=" * 60)
 
     # Start with an empty state — IngestFiles will populate it
-    result = app.invoke({})
+    invoke_config = {"callbacks": [_langfuse_handler]} if _langfuse_handler else {}
+    result = app.invoke({}, config=invoke_config)
 
     # Print verification
     print("\n" + "=" * 60)

@@ -348,32 +348,25 @@ LANGFUSE_HOST=https://cloud.langfuse.com  # ili self-hosted URL
 uv add langfuse
 ```
 
-#### Korak 4: Dodaj callback u main.py
+#### Korak 4: Pokreni — tracing je već integrisan u main.py
 
-Otvori `session10_gandra/main.py` i izmeni deo gde se poziva `app.invoke()`:
+**Ne moraš ništa menjati u kodu.** `main.py` automatski detektuje `LANGFUSE_SECRET_KEY` i `LANGFUSE_PUBLIC_KEY` u environment-u i aktivira Langfuse callback. Videćeš u outputu:
 
-```python
-# ── Langfuse Tracing (opciono) ─────────────────────────────────────
-# Ako su LANGFUSE_SECRET_KEY i LANGFUSE_PUBLIC_KEY postavljeni u env,
-# automatski se aktivira tracing. Ako nisu — radi bez tracinga.
-import os
-
-langfuse_config = {}
-if os.environ.get("LANGFUSE_SECRET_KEY"):
-    from langfuse.callback import CallbackHandler
-    langfuse_handler = CallbackHandler()
-    langfuse_config = {"callbacks": [langfuse_handler]}
-    print("🔍 Langfuse tracing: AKTIVIRAN")
-else:
-    print("🔍 Langfuse tracing: nije konfigurisan (opciono)")
-
-# Pokreni workflow
-result = app.invoke({}, config=langfuse_config)
+```
+🔍 Langfuse tracing: AKTIVIRAN
 ```
 
-Na ovaj način:
-- Ako imaš Langfuse keys → tracing je aktivan automatski
-- Ako nemaš → aplikacija radi normalno bez greške
+Ako keys nisu postavljeni, aplikacija radi normalno:
+
+```
+🔍 Langfuse tracing: nije konfigurisan (opciono — vidi HOWTO.md)
+```
+
+Kako radi (u `main.py`):
+- Na vrhu fajla: kreira `CallbackHandler` sa `session_id="cv-tailoring"` i `trace_name="cv-tailoring-pipeline"`
+- Pri `app.invoke()`: prosleđuje handler kao callback u config
+- `session_id` grupiše sve pokretanja u istu sesiju na dashboard-u
+- `trace_name` imenuje svaki trace za lakše filtriranje
 
 #### Korak 5: Koristi Langfuse dashboard
 

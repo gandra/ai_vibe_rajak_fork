@@ -1,7 +1,3 @@
-- elaboriraj u session10_gandra/HOWTO.md postupno korak po korak kako da pokrenem kod iz session10_gandra u jednoj sekciji
-- u drugoj sekciji elaboriraj roadmap na bazi plana, pogledaj session10_gandra/README.md
-- takodje pogledaj i session10_gandra/plan.md ali REAME je glavni a session10_gandra/plan.md je neka druga analiza ako moze da pomogne iskoristi nesto
-- u posebnoj sekciji elaboriraj data preparation i pojasni gde mi se nalaze testni podaci i ako nesto od podataka fali u session10_gandra/data za pokretanje app dodaj
-- ideja je da nastavimo razvoj app od koraka gde smo strali
-- ja moram prvo da shvatim kako da pokrenem ovo sto imam dokle smo stigli pa onda tek sledeci korak
-- u posebnoj sekciji elaboriraj sve eksterne deps kako da konfigurisem tima langfuse etc ...
+- Instrument session10_gandra/main.py with Langfuse tracing following best practices
+- dodao sam u env LANGFUSE_SECRET_KEY, LANGFUSE_PUBLIC_KEY i LANGFUSE_BASE_URL
+- kad zavrsis azuriraj session10_gandra/HOWTO.md kako da trace izvrseenje app i predlozi git commit message
