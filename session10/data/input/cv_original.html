@@ -1,0 +1,109 @@
+<!-- 
+  cv_original.html — Sample CV for testing
+  ==========================================
+  
+  This is a demo CV with a simple but realistic HTML structure.
+  Replace this with your actual CV HTML when ready.
+  
+  STRUCTURE NOTES (important for parse_cv.py):
+  - Summary is in a <div class="summary"> section
+  - Skills are in a <ul class="skills"> list
+  - Each experience entry is in a <div class="role"> block
+  - Education is in a <div class="education"> section
+  - The CSS is inline to keep it self-contained (no external stylesheet)
+  
+  TODO: Replace this sample with your real CV HTML.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV — Jane Smith</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; line-height: 1.6; }
+        h1 { margin-bottom: 5px; color: #2c3e50; }
+        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+        h3 { color: #34495e; margin-bottom: 5px; }
+        .contact { color: #666; margin-bottom: 20px; }
+        .summary { margin-bottom: 20px; }
+        .skills { display: flex; flex-wrap: wrap; list-style: none; padding: 0; }
+        .skills li { background: #ecf0f1; padding: 5px 12px; margin: 3px; border-radius: 4px; font-size: 0.9em; }
+        .role { margin-bottom: 20px; }
+        .role-header { display: flex; justify-content: space-between; align-items: baseline; }
+        .role-dates { color: #888; font-size: 0.9em; }
+        .role ul { margin-top: 5px; }
+        .education { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Jane Smith</h1>
+    <div class="contact">jane.smith@email.com | +1 (555) 123-4567 | github.com/janesmith</div>
+
+    <h2>Summary</h2>
+    <div class="summary">
+        Senior software engineer with 8 years of experience building scalable backend systems. 
+        Skilled in Python, Java, and cloud infrastructure. Passionate about clean architecture 
+        and mentoring junior developers.
+    </div>
+
+    <h2>Skills</h2>
+    <ul class="skills">
+        <li>Python</li>
+        <li>Java</li>
+        <li>PostgreSQL</li>
+        <li>Redis</li>
+        <li>Docker</li>
+        <li>AWS (EC2, S3, RDS)</li>
+        <li>REST APIs</li>
+        <li>Git</li>
+        <li>Linux</li>
+        <li>Agile/Scrum</li>
+    </ul>
+
+    <h2>Experience</h2>
+
+    <div class="role">
+        <div class="role-header">
+            <h3>Senior Software Engineer — Acme Corp</h3>
+            <span class="role-dates">Jan 2021 – Present</span>
+        </div>
+        <ul>
+            <li>Designed and maintained backend services for a payment processing platform using Python and PostgreSQL.</li>
+            <li>Collaborated with frontend team to build REST APIs serving mobile and web clients.</li>
+            <li>Migrated legacy monolith to microservices architecture on AWS.</li>
+            <li>Mentored a team of 3 junior engineers through code reviews and pair programming.</li>
+        </ul>
+    </div>
+
+    <div class="role">
+        <div class="role-header">
+            <h3>Software Engineer — Beta Systems</h3>
+            <span class="role-dates">Mar 2018 – Dec 2020</span>
+        </div>
+        <ul>
+            <li>Built data ingestion pipelines processing batch data using Python and Redis.</li>
+            <li>Developed internal tooling for deployment automation using Docker.</li>
+            <li>Participated in on-call rotation and incident response for production systems.</li>
+        </ul>
+    </div>
+
+    <div class="role">
+        <div class="role-header">
+            <h3>Junior Developer — Gamma Tech</h3>
+            <span class="role-dates">Jun 2016 – Feb 2018</span>
+        </div>
+        <ul>
+            <li>Contributed to Java-based e-commerce platform features under senior guidance.</li>
+            <li>Wrote unit and integration tests, improving code coverage from 45% to 78%.</li>
+        </ul>
+    </div>
+
+    <h2>Education</h2>
+    <div class="education">
+        <h3>BSc Computer Science — State University</h3>
+        <span class="role-dates">2012 – 2016</span>
+    </div>
+
+</body>
+</html>

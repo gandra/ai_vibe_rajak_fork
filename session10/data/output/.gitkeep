@@ -1,0 +1,6 @@
+# This directory is created at runtime by the WriteOutputs node (Step 10).
+# Output files:
+#   cv_tailored.html    — the tailored CV, ready for printing to PDF
+#   gap_questions.txt   — clarifying questions for the candidate
+#
+# These files are gitignored (add to .gitignore if needed).
