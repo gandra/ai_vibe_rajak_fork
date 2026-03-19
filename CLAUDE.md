@@ -4,104 +4,136 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an AI Agents Learning Repository focused on multi-agent orchestration using Python. The codebase progresses through 7 sessions exploring different AI frameworks and patterns.
+AI Agents learning repository progressing through 10 sessions — from embedding fundamentals to full LangGraph pipelines with validation loops. Each session is self-contained in its own directory. Written in Python 3.12, managed with **uv**.
 
-**Core Technologies**: Python 3.10+, crewAI, LangChain, LlamaIndex, Ollama, OpenAI API, FastMCP
+**Core stack**: Python 3.12, LangGraph, LangChain, crewAI, LlamaIndex, Ollama, OpenAI API, FastMCP, FAISS
 
 ## Common Commands
 
-### crewAI Project (session4/hello/)
-
 ```bash
-# Install dependencies
-pip install uv
+# Install all dependencies (from repo root)
+uv sync
+
+# Run any session script
+uv run python session8/agent_workflow.py
+
+# Add a dependency
+uv add <package>
+```
+
+### crewAI (session4/hello/)
+```bash
 cd session4/hello && crewai install
-
-# Run the multi-agent crew
-crewai run
-
-# Other commands
-crewai train        # Train crew for N iterations
-crewai replay       # Replay execution from specific task
-crewai test         # Test crew execution
+crewai run                  # Run the multi-agent crew
+crewai train / replay / test
 ```
 
 ### RAG Server (session4/rag/)
-
 ```bash
 cd session4/rag
-source env.sh       # Set OPENAI_API_KEY and paths
-python load.py      # Load documents into vector store
-python server_rerank_chat.py  # Start Flask RAG server
+source env.sh               # Sets OPENAI_API_KEY and paths
+python load.py              # Ingest documents into vector store
+python server_rerank_chat.py # Start Flask RAG server
 ```
 
 ### MCP CLI (session7/)
-
 ```bash
 cd session7
-# Requires: OLLAMA_HOST, OLLAMA_MODEL env vars (defaults: http://127.0.0.1:11434, gemma3:4b)
-python mcp_cli.py   # Interactive weather/air quality CLI
+uv run python mcp_cli.py   # Must run from session7/ (spawns MCP server via stdio)
 ```
 
-### Individual Session Scripts
-
+### Session 9 RAG Agent
 ```bash
-python session5/hitl.py         # Human-in-loop with SerperDevTool
-python session5/conditional.py  # Conditional task execution
-python session6/tool_chat.py    # LangChain tool binding
+cd session9
+python indexr.py            # Build FAISS index from URLs
+python graph.py             # Run RAG agent with hallucination grading
+# Also compatible with LangGraph Studio via langgraph.json
 ```
 
-## Architecture
+### Session 10 CV Tailoring
+```bash
+cd session10
+pip install -r requirements.txt
+python main.py              # Runs full 10-step pipeline, generates graph_visualization.png
+# Input: data/input/cv_original.html + data/input/job_description.txt
+# Output: data/output/cv_tailored.html + data/output/gap_questions.txt
+```
 
-### Session Structure
+### Docker (Ollama)
+```bash
+docker compose up -d        # Starts Ollama server on port 11435
+```
 
-| Session | Focus | Key Files |
-|---------|-------|-----------|
-| 1-3 | Foundation (embeddings with Ollama/OpenAI) | `instruct.txt` notes |
-| 4 | crewAI multi-agent + RAG | `hello/` (full crew), `rag/` (LlamaIndex) |
-| 5 | Conditional tasks, Human-in-Loop | `hitl.py`, `conditional.py` |
-| 6 | LangChain tool integration | `tool_chat.py`, `tools_exp.py` |
-| 7 | MCP protocol integration | `mcp_cli.py`, `weather-and-air-quality.py` |
-
-### crewAI Pattern (session4/hello/)
-
-The main multi-agent system uses crewAI's decorator-based architecture:
-
-- **`src/hello/config/agents.yaml`** - Agent definitions (role, goal, backstory with `{topic}` interpolation)
-- **`src/hello/config/tasks.yaml`** - Task definitions (description, expected_output, agent assignment)
-- **`src/hello/crew.py`** - Crew orchestration using `@CrewBase`, `@agent`, `@task`, `@crew` decorators
-- **`src/hello/main.py`** - Entry point with `run()`, `train()`, `replay()`, `test()` functions
-- **`knowledge/`** - User preference files for knowledge base
-
-Agents execute tasks sequentially via `Process.sequential` (hierarchical also supported).
-
-### Key Patterns Used
-
-1. **YAML Configuration** - Agent personas and task definitions externalized from code
-2. **Decorator Pattern** - `@agent`, `@task`, `@crew` for modular crew setup
-3. **Human-in-Loop** - `human_input=True` on tasks for user approval workflows
-4. **Conditional Tasks** - `ConditionalTask` with callback functions to skip/execute based on prior output
-5. **MCP Protocol** - Server/client pattern for external tool integration (weather, air quality APIs)
-6. **LangChain Tool Binding** - `ChatOllama` with Pydantic output parsers for structured routing
+### Dev Container
+```bash
+docker build -f .devcontainer/Dockerfile -t claude-sandbox .
+docker run -it --cap-add=NET_ADMIN --cap-add=NET_RAW -v "$(pwd):/workspace" claude-sandbox
+```
 
 ## Environment Variables
 
-Required API keys (set in `.env` or `env.sh`):
-- `OPENAI_API_KEY` - For OpenAI models and embeddings
-- `SERPER_API_KEY` - For web search via SerperDevTool
-- `OLLAMA_HOST` - Ollama server URL (default: `http://127.0.0.1:11434`)
-- `OLLAMA_MODEL` - Ollama model name (default: `gemma3:4b`)
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `OPENAI_API_KEY` | OpenAI models & embeddings | — |
+| `SERPER_API_KEY` | Web search (SerperDevTool, session5) | — |
+| `OLLAMA_HOST` | Ollama server URL | `http://127.0.0.1:11434` |
+| `OLLAMA_MODEL` | Ollama model name | `gemma3:4b` |
 
-## Docker Development Environment
+Session 9 also uses Langfuse tracing vars (`LANGFUSE_SECRET_KEY`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_HOST`) configured in `session9/.env`.
 
-The project includes a `.devcontainer/` setup for Claude Code sandbox:
+## Architecture
 
-```bash
-# Build and run container
-docker build -f .devcontainer/Dockerfile -t claude-sandbox .
-docker run -it --name claude-container --cap-add=NET_ADMIN --cap-add=NET_RAW -v "$(pwd):/workspace" claude-sandbox
+### Session Progression
 
-# Install Claude Code in container
-npm install -g @anthropic-ai/claude-code
-claude auth
+| Session | Focus | Framework |
+|---------|-------|-----------|
+| 1–3 | Embeddings, cosine similarity, FAISS/CLIP | Ollama, OpenAI |
+| 4 | Multi-agent orchestration + RAG server | crewAI, LlamaIndex |
+| 5 | Conditional tasks, human-in-loop | crewAI (`ConditionalTask`) |
+| 6 | LLM tool binding | LangChain (`bind_tools`) |
+| 7 | MCP protocol (server/client over stdio) | FastMCP, LangChain-Ollama |
+| 8 | Content generation workflow | LangGraph `StateGraph` |
+| 9 | RAG with hallucination detection & retry | LangGraph, FAISS, grading chains |
+| 10 | CV tailoring with fabrication validation | LangGraph, BeautifulSoup |
+
+### crewAI Pattern (session 4)
+
+YAML-driven multi-agent system:
+- `src/hello/config/agents.yaml` — agent personas (role, goal, backstory with `{topic}` interpolation)
+- `src/hello/config/tasks.yaml` — task definitions and agent assignments
+- `src/hello/crew.py` — orchestration via `@CrewBase`, `@agent`, `@task`, `@crew` decorators
+- Agents execute sequentially via `Process.sequential`
+
+### MCP Three-Tier Pattern (session 7)
+
+`mcp_cli.py` (HOST+CLIENT) spawns `weather-and-air-quality.py` (SERVER) via stdio:
+- **Router LLM** (temp=0.0): classifies intent → tool call vs. general chat
+- **General LLM** (temp=0.4): handles non-tool conversation
+- **Answer LLM** (temp=0.2): formats tool results into natural language
+
+Server exposes `get_weather` and `get_air_quality` tools using Open-Meteo API (no auth needed).
+
+### LangGraph Patterns (sessions 8–10)
+
+All use `StateGraph` with `TypedDict` state. Sessions 9 and 10 introduce **conditional retry loops**:
+
+**Session 9 (RAG)**: `retrieve → grade_documents → generate → hallucination_check` — if hallucinated, retransforms query and retries (no counter limit).
+
+**Session 10 (CV Tailoring)**: 10-node pipeline with counter-based retry (max 3):
 ```
+IngestFiles → ParseCVHtml → AnalyzeJD → GapAnalysis → Planner
+    → TailorWriter ↔ Validator (max 3 retries)
+    → GapQuestions → RenderHTML → WriteOutputs
+```
+
+Key structural pattern in session 10:
+- `state.py` — `CVTailoringState` TypedDict with ~12 keys, progressively populated
+- `nodes/` — one file per graph node (10 files), each receives/returns state dict
+- `prompts/` — separate `PromptTemplate` instances per LLM-calling node
+- Validation is both LLM-based (semantic) and deterministic (fabrication detection)
+
+`session10_gandra/` is a parallel variant of session 10 with identical architecture.
+
+### Codex Directory
+
+`codex/CODEX_INSTRUCTIONS.MD` contains a system prompt defining an AI consultant role emphasizing SOLID principles and clean architecture. `codex/PROMPT.MD` tracks active tasks.

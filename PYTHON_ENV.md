@@ -1,30 +1,124 @@
 # Python Environment Setup (uv)
 
-Kosmodrom API koristi **uv** - ultra-brzi Python package manager napisan u Rust-u.
+Ovaj projekat (AI Agents kurs) koristi **uv** - ultra-brzi Python package manager napisan u Rust-u.
+
+---
+
+## Najkorišćenije komande
+
+```bash
+# Aktiviraj virtualenv
+source .venv/bin/activate        # Linux/macOS
+.venv\Scripts\activate           # Windows
+
+# Pokreni bilo koji skript (bez aktivacije venv-a)
+uv run python session8/agent_workflow.py
+uv run python session10/main.py
+
+# Instaliraj sve dependencies iz pyproject.toml
+uv sync
+
+# Dodaj novi paket
+uv add langchain-openai
+
+# Dodaj dev dependency
+uv add --dev pytest
+
+# Ukloni paket
+uv remove package-name
+
+# Ažuriraj sve pakete
+uv sync --upgrade
+
+# Ažuriraj samo jedan paket
+uv add langchain-core --upgrade
+
+# Reset venv (čist start)
+rm -rf .venv && uv sync
+```
+
+> **Napomena:** `uv run` automatski koristi `.venv` bez potrebe za aktivacijom. Aktivacija je korisna samo ako želiš da koristiš `python` direktno u terminalu.
+
+---
+
+## Debug u PyCharm
+
+### 1. Podesi Python interpreter
+
+1. **File → Settings → Project → Python Interpreter**
+2. Klikni na **Add Interpreter → Add Local Interpreter**
+3. Izaberi **Existing** i navigiraj do:
+   ```
+   <project_root>/.venv/bin/python     # macOS/Linux
+   <project_root>/.venv/Scripts/python  # Windows
+   ```
+4. Klikni **OK** — PyCharm će prepoznati sve instalirane pakete
+
+> Ako `.venv` ne postoji, prvo pokreni `uv sync` u terminalu.
+
+### 2. Podesi Run/Debug konfiguraciju
+
+1. **Run → Edit Configurations → + → Python**
+2. Popuni polja:
+   - **Name:** npr. `session10 - main`
+   - **Script path:** izaberi fajl, npr. `session10/main.py`
+   - **Working directory:** postavi na folder sesije, npr. `<project_root>/session10`
+     (ovo je bitno jer mnogi skriptovi koriste relativne putanje do `data/` foldera)
+   - **Python interpreter:** proveri da je izabran `.venv` interpreter iz koraka 1
+3. Klikni **OK**
+
+### 3. Environment varijable u PyCharm
+
+1. U **Run/Debug Configuration** klikni na **Environment variables** polje
+2. Dodaj potrebne varijable:
+   ```
+   OPENAI_API_KEY=sk-...
+   OLLAMA_HOST=http://127.0.0.1:11434
+   OLLAMA_MODEL=gemma3:4b
+   ```
+3. Alternativno, instaliraj **EnvFile** plugin i koristi `.env` fajl
+
+### 4. Debugovanje
+
+- Postavi breakpoint klikom levo od broja linije (crvena tačka)
+- Pokreni sa **Debug** (ikonica bube, ili `Shift+F9`)
+- Koristi debug panel:
+  - **Step Over (F8)** — izvrši liniju, preskoči pozive funkcija
+  - **Step Into (F7)** — uđi u pozvanu funkciju
+  - **Step Out (Shift+F8)** — izađi iz trenutne funkcije
+  - **Resume (F9)** — nastavi do sledećeg breakpointa
+  - **Evaluate Expression (Alt+F8)** — izvrši proizvoljnu Python ekspresiju tokom pauziranja
+
+### 5. Debug async koda (MCP, LangGraph)
+
+Session 7 (MCP) i session 9/10 (LangGraph) koriste `asyncio`. PyCharm podržava async debug automatski — breakpointi rade normalno unutar `async def` funkcija. Samo se pobrini da je **Gevent compatible** isključen u:
+**Settings → Build, Execution, Deployment → Python Debugger** (podrazumevano je isključen).
+
+---
 
 ## Zašto uv?
 
 | Feature | uv | pip/venv | poetry |
 |---------|-----|----------|--------|
-| Brzina instalacije | 🚀 10-100x brže | Sporo | Srednje |
-| Lock file | ✅ `uv.lock` | ❌ | ✅ |
-| Resolver | ✅ Brz & tačan | ⚠️ Spor | ✅ |
-| Disk space | ✅ Global cache | ❌ Duplikati | ❌ |
-| Python management | ✅ Ugrađeno | ❌ | ❌ |
+| Brzina instalacije | 10-100x brže | Sporo | Srednje |
+| Lock file | `uv.lock` | nema | ima |
+| Resolver | Brz & tačan | Spor | OK |
+| Disk space | Global cache | Duplikati | Duplikati |
+| Python management | Ugrađeno | nema | nema |
 
 ---
 
-## 1. Instalacija uv
+## Instalacija uv
 
 ```bash
-# Linux / macOS
+# macOS (Homebrew)
+brew install uv
+
+# Linux / macOS (curl)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Windows (PowerShell)
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-# Homebrew (macOS)
-brew install uv
 
 # Proveri instalaciju
 uv --version
@@ -32,311 +126,108 @@ uv --version
 
 ---
 
-## 2. Inicijalizacija projekta (od nule)
+## Inicijalizacija projekta
+
+### Kloniran repo (već postoji pyproject.toml)
 
 ```bash
-cd PROJECT_ROOT
+cd <project_root>
+uv sync                           # Kreira .venv/, instalira deps, generiše uv.lock
+source .venv/bin/activate          # Opciono
+```
 
-# Kreiraj novi projekat (generiše pyproject.toml, .venv, itd.)
+### Novi projekat od nule
+
+```bash
 uv init
-
-# Ili kreiraj sa specifičnim imenom
-uv init my-project
-cd my-project
-
-# Dodaj dependencies
-uv add fastapi uvicorn
-
-# Dodaj dev dependencies
-uv add --dev pytest
-
-# Aktiviraj virtualenv (opciono - uv run automatski koristi)
-source .venv/bin/activate   # Linux/macOS
-.venv\Scripts\activate      # Windows
-```
-
-### Ako već imaš pyproject.toml (kloniran repo)
-
-```bash
-cd PROJECT_ROOT
-
-# Instaliraj dependencies iz postojećeg pyproject.toml
-uv sync
-
-# Aktiviraj virtualenv (opciono)
-source .venv/bin/activate   # Linux/macOS
-.venv\Scripts\activate      # Windows
+uv add langchain-core langgraph   # Dodaj dependencies
+uv add --dev pytest               # Dev dependencies
 ```
 
 ---
 
-## 3. Svakodnevne komande
-
-### Pokretanje aplikacije
+## Prebacivanje Python verzije
 
 ```bash
-# Pokreni FastAPI server (development)
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Ili sa aktiviranim venv
-uvicorn app.main:app --reload
-```
-
-### Dodavanje paketa
-
-```bash
-# Dodaj runtime dependency
-uv add fastapi
-
-# Dodaj dev dependency
-uv add --dev pytest
-
-# Dodaj sa verzijom
-uv add "sqlalchemy>=2.0.0,<3.0.0"
-```
-
-### Uklanjanje paketa
-
-```bash
-uv remove package-name
-```
-
-### Ažuriranje paketa
-
-```bash
-# Ažuriraj sve
-uv sync --upgrade
-
-# Ažuriraj specifičan paket
-uv add package-name --upgrade
+uv python install 3.12     # Instaliraj verziju
+uv python pin 3.12         # Koristi za ovaj projekat
+uv python list              # Lista instaliranih verzija
 ```
 
 ---
 
-## 4. Reset Environment (Čist start)
+## Session-specifične zavisnosti
 
-### Opcija A: Soft Reset (brzo)
-
-```bash
-# Obriši venv i ponovo instaliraj
-rm -rf .venv
-uv sync
-```
-
-### Opcija B: Hard Reset (potpuno čišćenje)
+Projekat drži zavisnosti na nivou root `pyproject.toml`. Za sesije koje zahtevaju dodatne pakete:
 
 ```bash
-# Obriši sve uv artefakte
-rm -rf .venv
-rm -f uv.lock
-
-# Ponovo kreiraj od pyproject.toml
-uv sync
-```
-
-### Opcija C: Nuclear Reset (uključuje cache)
-
-```bash
-# Obriši sve + globalni cache
-rm -rf .venv
-rm -f uv.lock
-uv cache clean
-
-# Fresh start
-uv sync
-```
-
----
-
-## 5. Kreiranje iz pyproject.toml
-
-Ako dobiješ samo `pyproject.toml` bez `uv.lock`:
-
-```bash
-cd /workspace/kosmodrom-api
-
-# Kreiraj venv i generiši lock file
-uv sync
-
-# Ovo će:
-# 1. Kreirati .venv/ folder
-# 2. Instalirati sve dependencies
-# 3. Generisati uv.lock file
-```
-
----
-
-## 6. Prebacivanje Python verzije
-
-```bash
-# Instaliraj Python verziju
-uv python install 3.12
-
-# Koristi specifičnu verziju za projekat
-uv python pin 3.12
-
-# Lista instaliranih verzija
-uv python list
-```
-
----
-
-## 7. Troubleshooting
-
-### Problem: "No module named 'app'"
-
-```bash
-# Proveri da li je venv aktivan
-which python  # Treba da pokazuje .venv/bin/python
-
-# Reinstaliraj
-uv sync
-```
-
-### Problem: Konflikt verzija
-
-```bash
-# Obriši lock i ponovo reši
-rm uv.lock
-
----
-
-## 8. Session 7: MCP + LangChain + Ollama
-
-Session7 sadrži dva Python fajla koja zahtevaju dodatne biblioteke:
-
-- `session7/weather-and-air-quality.py`: koristi `mcp` (server) i `httpx` (async HTTP klijent)
-- `session7/mcp_cli.py`: koristi `mcp` (klijent), `pydantic`, `langchain-core`, `langchain-ollama`
-
-### 8.1 Instalacija zavisnosti (uv)
-
-Ukorenu projekta:
-
-```bash
+# Session 7: MCP + LangChain + Ollama
 uv add mcp httpx langchain-ollama langchain-core pydantic
-```
 
-Ako radiš izolovano samo u `session7/`, komande su iste (ali i dalje je preporuka da držiš sve u jednom env-u na nivou repoa).
+# Session 9-10: LangGraph + RAG
+uv add langgraph langchain-openai faiss-cpu beautifulsoup4
 
-### 8.2 Ollama (neophodno za LLM)
-
-```bash
-# Pokreni Ollama server
+# Ollama server (mora da radi za session 7, 8, 9)
 ollama serve
-
-# Preuzmi model (primer)
 ollama pull gemma3:4b
-
-# Po želji izmeni model/host
-export OLLAMA_MODEL="gemma3:4b"     # ili npr. llama3.2:3b
-export OLLAMA_HOST="http://127.0.0.1:11434"
 ```
 
-### 8.3 Pokretanje session7 CLI-ja
+---
+
+## Reset Environment
 
 ```bash
-# Aktiviraj env (opciono) i idi u folder
-cd session7
+# Soft Reset (brzo)
+rm -rf .venv && uv sync
 
-# Pokreni CLI (on sam startuje MCP server preko stdio)
-uv run python mcp_cli.py
+# Hard Reset (ponovo reši sve zavisnosti)
+rm -rf .venv && rm -f uv.lock && uv sync
 
-# Primeri upita u promptu:
-#   weather in Belgrade
-#   air quality in Delhi
-#   both in Tokyo
+# Nuclear Reset (uključuje globalni cache)
+rm -rf .venv && rm -f uv.lock && uv cache clean && uv sync
 ```
 
-Napomena: `mcp_cli.py` pokreće `weather-and-air-quality.py` preko stdio, pa je važno da radiš iz foldera `session7/` (tako da je fajl vidljiv).
-uv sync
-```
+---
 
-### Problem: Stari cache
+## Troubleshooting
+
+### "No module named ..."
 
 ```bash
-uv cache clean
-uv sync
+which python                # Treba da pokazuje .venv/bin/python
+uv sync                     # Reinstaliraj
 ```
 
-### Problem: Permission denied
+### Konflikt verzija
 
 ```bash
-# Linux/macOS
+rm uv.lock && uv sync       # Ponovo reši zavisnosti
+```
+
+### Stari cache
+
+```bash
+uv cache clean && uv sync
+```
+
+### Permission denied (Linux/macOS)
+
+```bash
 chmod +x .venv/bin/*
 ```
 
 ---
 
-## 8. CI/CD integracija
-
-### GitHub Actions
-
-```yaml
-- name: Install uv
-  uses: astral-sh/setup-uv@v4
-
-- name: Install dependencies
-  run: uv sync --frozen
-
-- name: Run tests
-  run: uv run pytest
-```
-
-### Docker
-
-```dockerfile
-FROM python:3.11-slim
-
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
-
-WORKDIR /app
-COPY pyproject.toml uv.lock ./
-
-# Install dependencies
-RUN uv sync --frozen --no-dev
-
-COPY . .
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0"]
-```
-
----
-
-## 9. Korisni aliasi (.bashrc / .zshrc)
-
-```bash
-# Dodaj u ~/.bashrc ili ~/.zshrc
-alias uvr="uv run"
-alias uvs="uv sync"
-alias uva="uv add"
-alias uvd="uv add --dev"
-alias uvup="uv sync --upgrade"
-
-# Korišćenje
-uvr uvicorn app.main:app --reload
-uva requests
-uvd pytest
-```
-
----
-
-## 10. Struktura fajlova
+## Struktura fajlova
 
 ```
-kosmodrom-api/
+ai_vibe_rajak_fork/
 ├── pyproject.toml      # Dependency definicije
 ├── uv.lock             # Lock file (commit u git)
 ├── .venv/              # Virtual environment (NE COMMIT)
-├── .python-version     # Python verzija (opciono)
-└── app/                # Source code
-```
-
-### .gitignore (već podešeno)
-
-```gitignore
-.venv/
-.uv/
-__pycache__/
+├── .python-version     # Python verzija (3.12)
+├── session1-10/        # Po jedan folder po sesiji
+└── PYTHON_ENV.md       # Ovaj fajl
 ```
 
 ---
@@ -346,7 +237,7 @@ __pycache__/
 | Akcija | Komanda |
 |--------|---------|
 | Instaliraj sve | `uv sync` |
-| Pokreni app | `uv run uvicorn app.main:app --reload` |
+| Pokreni skript | `uv run python session8/agent_workflow.py` |
 | Dodaj paket | `uv add package` |
 | Dodaj dev paket | `uv add --dev package` |
 | Ukloni paket | `uv remove package` |
@@ -354,7 +245,3 @@ __pycache__/
 | Reset venv | `rm -rf .venv && uv sync` |
 | Očisti cache | `uv cache clean` |
 | Python verzija | `uv python install 3.12` |
-
----
-
-*Dokumentacija ažurirana: 2024-12*

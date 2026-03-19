@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+data/output/cv_tailored.html
+data/output/gap_questions.txt

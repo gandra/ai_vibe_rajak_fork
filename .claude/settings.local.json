@@ -3,7 +3,11 @@
     "allow": [
       "Bash(git -C /workspace log --oneline)",
       "Bash(xargs ls:*)",
-      "Bash(git -C /workspace show --stat)"
+      "Bash(git -C /workspace show --stat)",
+      "Bash(for i:*)",
+      "Bash(do echo:*)",
+      "Read(//Users/draganmijatovic/learn/_COURSES/rajak/ai_vibe_rajak_fork/**)",
+      "Bash(done)"
     ]
   }
 }

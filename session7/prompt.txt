@@ -1,0 +1,3 @@
+- kako da debugujem file session7/mcp_cli.py
+- puca greska na liniji "action = plan.get("action", "clarify")" plan je null
+-
