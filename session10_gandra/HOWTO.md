@@ -296,31 +296,195 @@ Jedina eksterna zavisnost za pokretanje aplikacije.
 
 Za Ollama: moraš imati pokrenut Ollama server (`ollama serve`) i preuzet model (`ollama pull llama3.1:8b`). Pogledaj `OLLAMA.md` u root-u projekta.
 
+### Langfuse vs LangSmith — čemu služe?
+
+Oba su **observability/tracing** alati za LLM aplikacije. Rešavaju isti osnovni problem: kad imaš pipeline od 10 LLM poziva, nemoguće je debug-ovati bez uvida u svaki pojedinačni poziv (koji prompt je otišao, šta je LLM vratio, koliko je trajalo, koliko je koštalo).
+
+| | Langfuse | LangSmith |
+|--|----------|-----------|
+| **Ko pravi** | Open-source kompanija (Langfuse GmbH) | LangChain tim (isti ljudi koji prave LangGraph) |
+| **Glavna namena** | Generički LLM tracing — radi sa bilo kojim framework-om | Native za LangChain/LangGraph ekosistem |
+| **Integracija sa LangGraph** | Preko callback-a (ručno dodaješ) | Automatski — samo postavi env varijable i radi |
+| **Self-hosting** | Da (Docker, open-source) | Ne (samo cloud) |
+| **Besplatni tier** | 50K observacija/mesec | 5K trace-ova/mesec |
+| **Prompt management** | Da (verzionisanje promptova) | Da (Prompt Hub) |
+| **Evaluacije** | Da (custom scoreri) | Da (annotation queues, auto-eval) |
+| **Dataset/testing** | Da (benchmark dataseti) | Da (jače — sa automatskim eval pipeline-ovima) |
+| **Cena (plaćeni)** | Jeftinije | Skuplje |
+| **Playground** | Da (testiraj prompt iz UI-a) | Da |
+
+**Preporuka za ovaj projekat:**
+- **LangSmith** ako ti je najbitnije da "samo radi" sa LangGraph-om bez dodatnog koda
+- **Langfuse** ako želiš open-source, self-hosting opciju, ili već koristiš Langfuse na drugim projektima
+
+Možeš koristiti oba istovremeno — nisu konfliktni.
+
+---
+
 ### Langfuse (opciono — observability/tracing)
 
-Session10_gandra **ne koristi Langfuse**. Ali ako želiš da dodaš tracing za debug LLM poziva:
+Langfuse ti daje potpun uvid u svaki LLM poziv: prompt koji je poslat, response koji je dobijen, latencija, cena, token count. Izuzetno korisno za debug kad LLM vrati loš JSON ili kad validacija pada.
 
-1. Napravi nalog na [cloud.langfuse.com](https://cloud.langfuse.com)
-2. Kreiraj projekat i kopiraj ključeve
-3. Dodaj u `.env`:
-   ```
-   LANGFUSE_SECRET_KEY=sk-lf-...
-   LANGFUSE_PUBLIC_KEY=pk-lf-...
-   LANGFUSE_HOST=https://cloud.langfuse.com
-   ```
-4. Instaliraj:
-   ```bash
-   uv add langfuse
-   ```
-5. Dodaj na vrh `main.py`:
-   ```python
-   from langfuse.callback import CallbackHandler
-   langfuse_handler = CallbackHandler()
-   # Prosledi kao config pri invoke:
-   result = app.invoke({}, config={"callbacks": [langfuse_handler]})
-   ```
+#### Korak 1: Napravi Langfuse nalog i projekat
 
-> **Napomena:** Session 9 koristi Langfuse — pogledaj `session9/.env` i `session9/multiagv3faiss_persisted.py` za primer integracije.
+1. Idi na [cloud.langfuse.com](https://cloud.langfuse.com) i registruj se (besplatni tier je dovoljan)
+2. Klikni **New Project** → nazovi ga npr. `cv-tailoring`
+3. Idi u **Settings → API Keys → Create new API key**
+4. Kopiraj tri vrednosti: **Secret Key**, **Public Key**, i **Host**
+
+#### Korak 2: Postavi environment varijable
+
+Dodaj u `session10_gandra/.env` (ili eksportuj u terminalu):
+
+```bash
+LANGFUSE_SECRET_KEY=sk-lf-...          # Secret Key sa dashboard-a
+LANGFUSE_PUBLIC_KEY=pk-lf-...          # Public Key sa dashboard-a
+LANGFUSE_HOST=https://cloud.langfuse.com  # ili self-hosted URL
+```
+
+#### Korak 3: Instaliraj langfuse paket
+
+```bash
+uv add langfuse
+```
+
+#### Korak 4: Dodaj callback u main.py
+
+Otvori `session10_gandra/main.py` i izmeni deo gde se poziva `app.invoke()`:
+
+```python
+# ── Langfuse Tracing (opciono) ─────────────────────────────────────
+# Ako su LANGFUSE_SECRET_KEY i LANGFUSE_PUBLIC_KEY postavljeni u env,
+# automatski se aktivira tracing. Ako nisu — radi bez tracinga.
+import os
+
+langfuse_config = {}
+if os.environ.get("LANGFUSE_SECRET_KEY"):
+    from langfuse.callback import CallbackHandler
+    langfuse_handler = CallbackHandler()
+    langfuse_config = {"callbacks": [langfuse_handler]}
+    print("🔍 Langfuse tracing: AKTIVIRAN")
+else:
+    print("🔍 Langfuse tracing: nije konfigurisan (opciono)")
+
+# Pokreni workflow
+result = app.invoke({}, config=langfuse_config)
+```
+
+Na ovaj način:
+- Ako imaš Langfuse keys → tracing je aktivan automatski
+- Ako nemaš → aplikacija radi normalno bez greške
+
+#### Korak 5: Koristi Langfuse dashboard
+
+Posle pokretanja `python main.py`:
+
+1. Idi na [cloud.langfuse.com](https://cloud.langfuse.com) → tvoj projekat
+2. Klikni **Traces** — videćeš trace za svako pokretanje pipeline-a
+3. Klikni na trace → vidiš svaki LLM poziv:
+   - **Input**: kompletan prompt sa svim varijablama
+   - **Output**: LLM response (JSON koji je vratio)
+   - **Metadata**: model, temperatura, token count, latencija, cena
+4. Korisni filteri:
+   - **By model**: vidi samo gpt-4o-mini pozive
+   - **By latency**: pronađi spore pozive
+   - **By cost**: prati potrošnju po pokretanju
+
+#### Tipični debug scenariji sa Langfuse
+
+| Problem | Šta gledaš u Langfuse |
+|---------|----------------------|
+| LLM vraća neispravan JSON | Otvori Output tab — vidi tačan response |
+| Validator stalno pada | Uporedi Input (prompt) sa Output — da li prompt traži pravu stvar? |
+| Pipeline je spor | Sortiranje po latenciji — koji node traje najduže? |
+| Preveliki troškovi | Cost tab — koji prompt troši najviše tokena? |
+
+> **Napomena:** Session 9 takođe koristi Langfuse — pogledaj `session9/multiagv3faiss_persisted.py` za primer integracije u RAG kontekstu.
+
+---
+
+### LangSmith (opciono — native LangChain/LangGraph tracing)
+
+LangSmith je tracing platforma koju pravi **isti tim koji pravi LangGraph**. Glavna prednost: **nula koda za integraciju** — samo postaviš env varijable i svi LangChain/LangGraph pozivi se automatski loguju.
+
+#### Korak 1: Napravi LangSmith nalog
+
+1. Idi na [smith.langchain.com](https://smith.langchain.com) i registruj se
+2. Besplatni tier: 5K trace-ova mesečno (dovoljno za razvoj)
+3. Idi u **Settings → API Keys → Create API Key**
+4. Kopiraj key (počinje sa `lsv2_...`)
+
+#### Korak 2: Postavi environment varijable
+
+```bash
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY="lsv2_pt_..."
+export LANGCHAIN_PROJECT="cv-tailoring"       # opciono, default je "default"
+```
+
+Ili dodaj u `session10_gandra/.env`:
+
+```
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY=lsv2_pt_...
+LANGCHAIN_PROJECT=cv-tailoring
+```
+
+#### Korak 3: Pokreni — to je sve
+
+```bash
+cd session10_gandra
+uv run python main.py
+```
+
+**Nema izmena u kodu.** LangChain/LangGraph automatski detektuje `LANGCHAIN_TRACING_V2=true` i šalje trace-ove na LangSmith. Svaki `ChatOpenAI` poziv, svaki `JsonOutputParser`, svaki `PromptTemplate.invoke()` — sve se loguje automatski.
+
+#### Korak 4: Koristi LangSmith dashboard
+
+Posle pokretanja:
+
+1. Idi na [smith.langchain.com](https://smith.langchain.com) → tvoj projekat
+2. Klikni **Runs** — videćeš ceo LangGraph trace kao stablo:
+   ```
+   RunnableSequence (root)
+   ├── IngestFiles           (0.01s, no LLM)
+   ├── ParseCVHtml           (2.3s)
+   │   ├── PromptTemplate    → vidi finalni prompt
+   │   ├── ChatOpenAI        → vidi request/response, tokeni, cena
+   │   └── JsonOutputParser  → vidi parsirani JSON
+   ├── AnalyzeJD             (1.8s)
+   │   ├── PromptTemplate
+   │   ├── ChatOpenAI
+   │   └── JsonOutputParser
+   └── ...
+   ```
+3. Za svaki čvor vidiš:
+   - **Input/Output** sa kompletnim podacima
+   - **Latencija** po koraku
+   - **Token count** i **cena** (per-call i kumulativno)
+   - **Errori** — ako `JsonOutputParser` padne, vidiš tačno šta je LLM vratio
+
+#### LangSmith specifične prednosti za LangGraph
+
+| Feature | Opis |
+|---------|------|
+| **Graph visualization** | Automatski prikazuje graf sa indikacijom koji čvor je aktivan |
+| **Retry loop tracing** | Kad TailorWriter ↔ Validator loop radi, vidiš svaku iteraciju kao zasebni pod-trace |
+| **Playground** | Klikni na bilo koji LLM poziv → "Open in Playground" → testiraj prompt sa izmenjenim varijablama |
+| **Comparison** | Uporedi dva pokretanja side-by-side (npr. sa i bez korekcija u promptu) |
+| **Annotation** | Ručno oceni output svakog koraka (thumb up/down) za kasniju analizu |
+
+#### Isključivanje tracinga
+
+Ako ne želiš da šalješ podatke na LangSmith:
+
+```bash
+unset LANGCHAIN_TRACING_V2
+# ili
+export LANGCHAIN_TRACING_V2=false
+```
+
+---
 
 ### Mermaid API (automatski)
 
@@ -328,9 +492,10 @@ Session10_gandra **ne koristi Langfuse**. Ali ako želiš da dodaš tracing za d
 
 ### Rezime eksternih servisa
 
-| Servis | Obavezan? | Potreban key? | Za šta se koristi |
-|--------|-----------|---------------|-------------------|
-| OpenAI API | Da | `OPENAI_API_KEY` | Svi LLM nodovi (Steps 2-8) |
-| Ollama | Alternativa za OpenAI | Ne (lokalan) | Zamena za OpenAI LLM |
-| Langfuse | Ne | `LANGFUSE_*` keys | Tracing/debug LLM poziva |
-| Mermaid API | Ne (samo za sliku) | Ne | Generisanje `graph_visualization.png` |
+| Servis | Obavezan? | Potreban key? | Za šta se koristi | Izmene u kodu? |
+|--------|-----------|---------------|-------------------|----------------|
+| OpenAI API | Da | `OPENAI_API_KEY` | Svi LLM nodovi (Steps 2-8) | Ne (već integrisano) |
+| Ollama | Alternativa za OpenAI | Ne (lokalan) | Zamena za OpenAI LLM | Da (otkomentariši) |
+| LangSmith | Ne | `LANGCHAIN_API_KEY` | Native LangGraph tracing | **Ne — samo env varijable** |
+| Langfuse | Ne | `LANGFUSE_*` keys | Open-source LLM tracing | Da (callback u main.py) |
+| Mermaid API | Ne (samo za sliku) | Ne | Generisanje `graph_visualization.png` | Ne |

@@ -51,9 +51,8 @@ from prompts.parse_cv import parse_cv_prompt
 # Switch between OpenAI and Ollama by commenting/uncommenting below.
 
 # Option A: OpenAI (cloud — fast, best structured output)
-OPENAI_API_KEY = ""
-os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-
+# Reads OPENAI_API_KEY from environment. Set it before running:
+#   export OPENAI_API_KEY="sk-..."
 from langchain_openai import ChatOpenAI
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
