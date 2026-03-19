@@ -76,20 +76,33 @@ import os
 from langgraph.graph import StateGraph, START, END
 from state import CVTailoringState
 
-# ── Langfuse Tracing (opciono) ────────────────────────────────────
-# Aktivira se automatski ako su LANGFUSE_SECRET_KEY i LANGFUSE_PUBLIC_KEY
-# postavljeni u env (ili .env fajlu). Bez tih varijabli — radi normalno.
-_langfuse_handler = None
+# ── Tracing Setup (opciono) ───────────────────────────────────────
+# Podržava LangSmith, Langfuse, oba istovremeno, ili nijedan.
+# Svaki se aktivira nezavisno na osnovu env varijabli.
+
+# — LangSmith: automatski za LangChain/LangGraph (zero-code)
+# Potrebno: LANGCHAIN_TRACING_V2=true + LANGCHAIN_API_KEY
+_langsmith_enabled = (
+    os.environ.get("LANGCHAIN_TRACING_V2", "").lower() == "true"
+    and os.environ.get("LANGCHAIN_API_KEY")
+)
+_langsmith_project = os.environ.get("LANGCHAIN_PROJECT", "default")
+if _langsmith_enabled:
+    print(f"🔍 LangSmith tracing: AKTIVIRAN (projekat: {_langsmith_project})")
+else:
+    print("🔍 LangSmith tracing: nije konfigurisan (opciono — vidi HOWTO.md)")
+
+# — Langfuse: preko callback-a (langfuse v4 + @observe)
+# Potrebno: LANGFUSE_SECRET_KEY + LANGFUSE_PUBLIC_KEY
+_langfuse_enabled = False
 if os.environ.get("LANGFUSE_SECRET_KEY") and os.environ.get("LANGFUSE_PUBLIC_KEY"):
     try:
-        from langfuse.callback import CallbackHandler
-        _langfuse_handler = CallbackHandler(
-            session_id="cv-tailoring",
-            trace_name="cv-tailoring-pipeline",
-        )
+        from langfuse import observe
+        from langfuse.langchain import CallbackHandler as LangfuseCallbackHandler
+        _langfuse_enabled = True
         print("🔍 Langfuse tracing: AKTIVIRAN")
     except ImportError:
-        print("🔍 Langfuse tracing: LANGFUSE_* keys postavljeni ali 'langfuse' paket nije instaliran (uv add langfuse)")
+        print("🔍 Langfuse tracing: LANGFUSE_* keys postavljeni ali paketi nisu instalirani (uv add langfuse langchain)")
 else:
     print("🔍 Langfuse tracing: nije konfigurisan (opciono — vidi HOWTO.md)")
 
@@ -180,14 +193,24 @@ print("📊 Graph image saved to graph_visualization.png")
 
 
 # ── Run ─────────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    print("=" * 60)
-    print("  CV Tailoring Agent — LangGraph Pipeline")
-    print("  Checkpoint A: IngestFiles → ParseCVHtml")
-    print("=" * 60)
 
-    # Start with an empty state — IngestFiles will populate it
-    invoke_config = {"callbacks": [_langfuse_handler]} if _langfuse_handler else {}
+def _run_pipeline():
+    """Run the CV tailoring pipeline and print results.
+
+    Tracing:
+      - LangSmith: automatic (zero-code) — if LANGCHAIN_TRACING_V2=true,
+        all LangChain/LangGraph calls are traced with no extra config.
+      - Langfuse: via CallbackHandler passed in invoke config.
+      - Both can run simultaneously — LangSmith traces internally,
+        Langfuse traces via callback. No conflicts.
+    """
+    # Build invoke config — add Langfuse callback if enabled.
+    # LangSmith needs nothing here (it hooks in automatically).
+    callbacks = []
+    if _langfuse_enabled:
+        callbacks.append(LangfuseCallbackHandler())
+
+    invoke_config = {"callbacks": callbacks} if callbacks else {}
     result = app.invoke({}, config=invoke_config)
 
     # Print verification
@@ -207,3 +230,19 @@ if __name__ == "__main__":
             print(f"      education: {len(result[key]['education'])} entries")
         else:
             print(f"  • {key}: {result[key]}")
+
+    return result
+
+
+# Wrap with @observe for named Langfuse trace (only if Langfuse is enabled)
+if _langfuse_enabled:
+    _run_pipeline = observe(name="cv-tailoring-pipeline")(_run_pipeline)
+
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print("  CV Tailoring Agent — LangGraph Pipeline")
+    print("  Checkpoint A: IngestFiles → ParseCVHtml")
+    print("=" * 60)
+
+    result = _run_pipeline()

@@ -319,6 +319,29 @@ Oba su **observability/tracing** alati za LLM aplikacije. Rešavaju isti osnovni
 
 Možeš koristiti oba istovremeno — nisu konfliktni.
 
+### Dual Tracing — kako radi u main.py
+
+`main.py` automatski detektuje oba sistema iz env varijabli i ispisuje status pri pokretanju:
+
+```
+🔍 LangSmith tracing: AKTIVIRAN (projekat: cv-tailoring)
+🔍 Langfuse tracing: AKTIVIRAN
+```
+
+**Kako rade paralelno bez konflikta:**
+- **LangSmith** se hookuje interno u LangChain/LangGraph runtime — nema callback-a, nema koda. Samo `LANGCHAIN_TRACING_V2=true` + `LANGCHAIN_API_KEY`.
+- **Langfuse** radi preko `CallbackHandler` koji se prosleđuje u `app.invoke(config={"callbacks": [...]})`, plus `@observe` decorator za imenovanje root trace-a.
+- Oba primaju iste podatke (prompt, response, tokeni, latencija) ali nezavisno.
+
+**Sve kombinacije rade:**
+
+| LangSmith | Langfuse | Rezultat |
+|-----------|----------|----------|
+| ✅ | ✅ | Oba trace-uju — uporedi side-by-side |
+| ✅ | ❌ | Samo LangSmith (zero-code) |
+| ❌ | ✅ | Samo Langfuse (callback) |
+| ❌ | ❌ | Bez tracinga — app radi normalno |
+
 ---
 
 ### Langfuse (opciono — observability/tracing)
@@ -342,11 +365,13 @@ LANGFUSE_PUBLIC_KEY=pk-lf-...          # Public Key sa dashboard-a
 LANGFUSE_HOST=https://cloud.langfuse.com  # ili self-hosted URL
 ```
 
-#### Korak 3: Instaliraj langfuse paket
+#### Korak 3: Instaliraj langfuse i langchain pakete
 
 ```bash
-uv add langfuse
+uv add langfuse langchain
 ```
+
+> **Napomena:** Langfuse v4 zahteva `langchain` paket (ne samo `langchain-core`) za `CallbackHandler`.
 
 #### Korak 4: Pokreni — tracing je već integrisan u main.py
 
@@ -363,10 +388,10 @@ Ako keys nisu postavljeni, aplikacija radi normalno:
 ```
 
 Kako radi (u `main.py`):
-- Na vrhu fajla: kreira `CallbackHandler` sa `session_id="cv-tailoring"` i `trace_name="cv-tailoring-pipeline"`
-- Pri `app.invoke()`: prosleđuje handler kao callback u config
-- `session_id` grupiše sve pokretanja u istu sesiju na dashboard-u
-- `trace_name` imenuje svaki trace za lakše filtriranje
+- Na vrhu fajla: detektuje `LANGFUSE_SECRET_KEY` + `LANGFUSE_PUBLIC_KEY` u env-u
+- `_run_pipeline()` je obavijen `@observe(name="cv-tailoring-pipeline")` decoratorom — ovo kreira imenovan root trace
+- Pri `app.invoke()`: prosleđuje `LangfuseCallbackHandler` kao callback — svi LangChain pozivi se ugnježdavaju pod root trace-om
+- U Langfuse dashboardu trace se zove **"cv-tailoring-pipeline"** (ne "unnamed")
 
 #### Korak 5: Koristi Langfuse dashboard
 
@@ -489,6 +514,6 @@ export LANGCHAIN_TRACING_V2=false
 |--------|-----------|---------------|-------------------|----------------|
 | OpenAI API | Da | `OPENAI_API_KEY` | Svi LLM nodovi (Steps 2-8) | Ne (već integrisano) |
 | Ollama | Alternativa za OpenAI | Ne (lokalan) | Zamena za OpenAI LLM | Da (otkomentariši) |
-| LangSmith | Ne | `LANGCHAIN_API_KEY` | Native LangGraph tracing | **Ne — samo env varijable** |
-| Langfuse | Ne | `LANGFUSE_*` keys | Open-source LLM tracing | Da (callback u main.py) |
+| LangSmith | Ne | `LANGCHAIN_API_KEY` + `LANGCHAIN_TRACING_V2=true` | Native LangGraph tracing | **Ne — samo env varijable** |
+| Langfuse | Ne | `LANGFUSE_SECRET_KEY` + `LANGFUSE_PUBLIC_KEY` | Open-source LLM tracing | **Ne — već integrisano u main.py** |
 | Mermaid API | Ne (samo za sliku) | Ne | Generisanje `graph_visualization.png` | Ne |

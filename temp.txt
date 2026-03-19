@@ -1,3 +1,6 @@
-- Instrument session10_gandra/main.py with Langfuse tracing following best practices
-- dodao sam u env LANGFUSE_SECRET_KEY, LANGFUSE_PUBLIC_KEY i LANGFUSE_BASE_URL
+- Instrument session10_gandra/main.py with langsmith tracing following best practices
+- dodao sam u env LANGSMITH_TRACING, LANGSMITH_ENDPOINT, LANGSMITH_PROJECT i LANGSMITH_API_KEY
+- nemam ANTHROPIC_API_KEY koristim OPENAI_API_KEY
+- zelim da kod podrzi langsmith ili langfuse i da moze da radi sa oba, sa jednim ili nijednim
+- kad rade oba mogu lepo da uporedim
 - kad zavrsis azuriraj session10_gandra/HOWTO.md kako da trace izvrseenje app i predlozi git commit message
